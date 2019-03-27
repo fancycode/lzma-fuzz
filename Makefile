@@ -25,7 +25,7 @@ LIBRARY = liblzma.a
 fuzzers: $(FUZZERS)
 
 %_fuzzer: %_fuzzer.o $(LIBRARY)
-	$(CXX) -g -o $@ $+ $(LIB_FUZZING_ENGINE)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -g -o $@ $+ $(LIB_FUZZING_ENGINE)
 
 $(LIBRARY): $(C_OBJ)
 	$(AR) r $@ $+
