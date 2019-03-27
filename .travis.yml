@@ -1,0 +1,24 @@
+dist: xenial
+sudo: false
+
+language: c
+compiler: clang
+cache: ccache
+
+env:
+  global:
+    - CC=clang
+    - CXX=clang++
+    - CFLAGS=-fsanitize=fuzzer,address
+    - CXXFLAGS=-fsanitize=fuzzer,address
+    - LIB_FUZZING_ENGINE=-fsanitize=fuzzer
+  matrix:
+    - FUZZER=7zcrc_fuzzer
+    - FUZZER=delta_fuzzer
+    - FUZZER=lzma2dec_fuzzer
+    - FUZZER=lzmadec_fuzzer
+
+script:
+  - make
+  - |
+    [ ! -d "corpus/$FUZZER" ] || ./$FUZZER corpus/$FUZZER/*
