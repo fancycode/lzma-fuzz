@@ -25,7 +25,7 @@ LIBRARY = liblzma.a
 fuzzers: $(FUZZERS)
 
 %_fuzzer: %_fuzzer.o $(LIBRARY)
-	$(CXX) $(LDFLAGS) $(CXXFLAGS) -g -o $@ $+ $(LIB_FUZZING_ENGINE)
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $(LIB_FUZZING_ENGINE) $+
 
 $(LIBRARY): $(C_OBJ)
 	$(AR) r $@ $+
@@ -36,10 +36,10 @@ clean:
 	rm -f $(CORPUSES)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -g -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCLUDES) -c -o $@ $<
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -g -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
 %_seed_corpus.zip:
 	zip -r $@ $(CORPUS_ROOT)/$*
