@@ -29,7 +29,7 @@
 
 static const size_t kBufferSize = 8192;
 
-static const size_t kMaxDictionarySize = 1024 * 1024;
+static const size_t kMaxDictionarySize = 32 * 1024 * 1024;
 
 // Copied from sdk/C/Lzma2Dec.c
 #define LZMA2_DIC_SIZE_FROM_PROP(p) \
