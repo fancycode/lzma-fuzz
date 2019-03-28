@@ -23,6 +23,7 @@ env:
     - FUZZER=delta_fuzzer
     - FUZZER=lzma2dec_fuzzer
     - FUZZER=lzmadec_fuzzer
+    - FUZZER=lzmaenc_fuzzer
     - FUZZER=xzcrc64_fuzzer
 
 script:
