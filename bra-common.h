@@ -39,7 +39,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   assert(tmp);
   memcpy(tmp, data, size);
 
-  UInt32 state;
   const UInt32 ip = 0;
 
   // Encode data.
