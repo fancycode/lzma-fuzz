@@ -29,8 +29,6 @@
 
 #include "common-alloc.h"
 
-#include <stdio.h>
-
 class OutputBuffer {
  public:
   OutputBuffer();
