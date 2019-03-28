@@ -57,6 +57,7 @@ endif
 
 C_OBJ = $(C_SOURCES:%.c=%.o)
 
+COMMON_FLAGS=-g -Wall -Werror
 INCLUDES = -I$(SDK_ROOT)/C
 LIB_FUZZING_ENGINE ?= -lFuzzingEngine
 
@@ -70,7 +71,7 @@ LIBRARY = liblzma.a
 fuzzers: $(FUZZERS)
 
 %_fuzzer: %_fuzzer.o $(LIBRARY)
-	$(CXX) $(LDFLAGS) $(CXXFLAGS) -g -o $@ $(LIB_FUZZING_ENGINE) $+
+	$(CXX) $(LDFLAGS) $(CXXFLAGS) $(COMMON_FLAGS) -o $@ $(LIB_FUZZING_ENGINE) $+
 
 $(LIBRARY): $(C_OBJ)
 	$(AR) r $@ $+
@@ -81,10 +82,10 @@ clean:
 	rm -f $(CORPUSES)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(SDK_FLAGS) $(INCLUDES) -g -c -o $@ $<
+	$(CC) $(CFLAGS) $(SDK_FLAGS) $(INCLUDES) $(COMMON_FLAGS) -c -o $@ $<
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -g -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(COMMON_FLAGS) -c -o $@ $<
 
 %_seed_corpus.zip:
 	zip -r $@ $(CORPUS_ROOT)/$*
