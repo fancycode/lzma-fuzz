@@ -97,3 +97,4 @@ install: fuzzers corpuses
 	@[ ! -z "$(DEST)" ] || exit 1
 	cp $(FUZZERS) $(DEST)
 	cp $(CORPUSES) $(DEST)
+	cp *.dict $(DEST)
