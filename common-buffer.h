@@ -132,3 +132,133 @@ SRes InputBuffer::Read(void *data, size_t *size) {
   }
   return SZ_OK;
 }
+
+class InputLookBuffer {
+ public:
+  InputLookBuffer(const uint8_t *data, size_t size);
+
+  ILookInStream *stream() { return &stream_.vt; };
+
+ private:
+  typedef struct {
+    ILookInStream vt;
+    InputLookBuffer *buffer;
+  } InputLookBufferStream;
+
+  static SRes _Look(const ILookInStream *p, const void **data, size_t *size);
+  SRes Look(const void **data, size_t *size);
+  static SRes _Skip(const ILookInStream *p, size_t offset);
+  SRes Skip(size_t offset);
+  static SRes _Read(const ILookInStream *p, void *data, size_t *size);
+  SRes Read(void *data, size_t *size);
+  static SRes _Seek(const ILookInStream *p, Int64 *pos, ESzSeek origin);
+  SRes Seek(Int64 *pos, ESzSeek origin);
+
+  InputLookBufferStream stream_;
+  const uint8_t *data_;
+  size_t size_;
+  size_t position_ = 0;
+};
+
+InputLookBuffer::InputLookBuffer(const uint8_t *data, size_t size)
+  : data_(data), size_(size) {
+  stream_.vt.Look = &InputLookBuffer::_Look;
+  stream_.vt.Skip = &InputLookBuffer::_Skip;
+  stream_.vt.Read = &InputLookBuffer::_Read;
+  stream_.vt.Seek = &InputLookBuffer::_Seek;
+  stream_.buffer = this;
+}
+
+// static
+SRes InputLookBuffer::_Look(const ILookInStream *p, const void **data,
+    size_t *size) {
+  InputLookBufferStream *stream =
+      CONTAINER_FROM_VTBL(p, InputLookBufferStream, vt);
+  return stream->buffer->Look(data, size);
+}
+
+SRes InputLookBuffer::Look(const void **data, size_t *size) {
+  size_t available = size_ - position_;
+  if (available < *size) {
+    *size = available;
+  }
+  *data = data_ + position_;
+  return SZ_OK;
+}
+
+// static
+SRes InputLookBuffer::_Skip(const ILookInStream *p, size_t offset) {
+  InputLookBufferStream *stream =
+      CONTAINER_FROM_VTBL(p, InputLookBufferStream, vt);
+  return stream->buffer->Skip(offset);
+}
+
+SRes InputLookBuffer::Skip(size_t offset) {
+  size_t available = size_ - position_;
+  if (offset > available) {
+    offset = available;
+  }
+  position_ += offset;
+  return SZ_OK;
+}
+
+// static
+SRes InputLookBuffer::_Read(const ILookInStream *p, void *data, size_t *size) {
+  InputLookBufferStream *stream =
+      CONTAINER_FROM_VTBL(p, InputLookBufferStream, vt);
+  return stream->buffer->Read(data, size);
+}
+
+SRes InputLookBuffer::Read(void *data, size_t *size) {
+  size_t available = size_ - position_;
+  if (available < *size) {
+    *size = available;
+  }
+  if (*size > 0) {
+    memcpy(data, data_ + position_, *size);
+    position_ += *size;
+  }
+  return SZ_OK;
+}
+
+// static
+SRes InputLookBuffer::_Seek(const ILookInStream *p, Int64 *pos,
+    ESzSeek origin) {
+  InputLookBufferStream *stream =
+      CONTAINER_FROM_VTBL(p, InputLookBufferStream, vt);
+  return stream->buffer->Seek(pos, origin);
+}
+
+SRes InputLookBuffer::Seek(Int64 *pos, ESzSeek origin) {
+  switch (origin) {
+    case SZ_SEEK_SET:
+      if (*pos > size_) {
+        *pos = size_;
+      } else if (*pos < 0) {
+        *pos = 0;
+      }
+      position_ = *pos;
+      break;
+    case SZ_SEEK_CUR:
+      if (*pos > size_ || position_ + *pos > size_) {
+        *pos = size_;
+      } else if (position_ < -*pos) {
+        *pos = 0;
+      }
+      position_ += *pos;
+      break;
+    case SZ_SEEK_END:
+      if (*pos >= 0) {
+        *pos = size_;
+      } else if (-(*pos) > size_) {
+        *pos = 0;
+      } else {
+        *pos = size_ + *pos;
+      }
+      position_ = *pos;
+      break;
+    default:
+      return SZ_ERROR_PARAM;
+  }
+  return SZ_OK;
+}
