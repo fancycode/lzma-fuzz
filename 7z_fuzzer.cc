@@ -71,6 +71,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     SzArEx_Extract(&db, buffer.stream(), i, &blockIndex, &outBuffer,
         &outBufferSize, &offset, &outSizeProcessed, &CommonAlloc, &CommonAlloc);
   }
+  ISzAlloc_Free(&CommonAlloc, outBuffer);
 
 exit:
   SzArEx_Free(&db, &CommonAlloc);
