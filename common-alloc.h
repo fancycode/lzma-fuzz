@@ -18,18 +18,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+#include "7zAlloc.h"
 
-#include <stdint.h>
-#include <stdlib.h>
-
-#include "7zTypes.h"
-
-static void *LzmaAlloc(ISzAllocPtr p, size_t size) {
-  return malloc(size);
-}
-
-static void LzmaFree(ISzAllocPtr p, void *address) {
-  free(address);
-}
-
-static ISzAlloc CommonAlloc = {LzmaAlloc, LzmaFree};
+static ISzAlloc CommonAlloc = {SzAlloc, SzFree};
