@@ -2,7 +2,7 @@ ROOT = $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 SDK_ROOT = $(ROOT)sdk
 CORPUS_ROOT = $(ROOT)corpus
 
-SDK_FLAGS =
+SDK_FLAGS = -D_7ZIP_PPMD_SUPPPORT
 C_SOURCES = \
 	$(SDK_ROOT)/C/7zAlloc.c \
 	$(SDK_ROOT)/C/7zArcIn.c \
