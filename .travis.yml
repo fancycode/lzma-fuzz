@@ -13,6 +13,7 @@ env:
     - CXXFLAGS=-fsanitize=fuzzer,address
     - LIB_FUZZING_ENGINE=-fsanitize=fuzzer
   matrix:
+    - FUZZER=7z_fuzzer
     - FUZZER=filters_fuzzer
     - FUZZER=lzma2dec_fuzzer
     - FUZZER=lzma2enc_fuzzer
