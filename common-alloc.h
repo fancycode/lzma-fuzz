@@ -24,7 +24,18 @@
 
 #include "7zTypes.h"
 
+#if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
+
+// Arbitrary limit of 2 GByte for memory allocations. Used to prevent the
+// MemorySanitizer from aborting with errors like "requested allocation size
+// 0xffffffffffffffff exceeds maximum supported size of 0x200000000".
+static const size_t kMaxAllowedMemory = 2 * 1024 * 1024 * 1024L;
+
 static void *LzmaAlloc(ISzAllocPtr p, size_t size) {
+  if (size > kMaxAllowedMemory) {
+    return nullptr;
+  }
+
   return malloc(size);
 }
 
@@ -33,3 +44,11 @@ static void LzmaFree(ISzAllocPtr p, void *address) {
 }
 
 static ISzAlloc CommonAlloc = {LzmaAlloc, LzmaFree};
+
+#else
+
+#include "7zAlloc.h"
+
+static ISzAlloc CommonAlloc = {SzAlloc, SzFree};
+
+#endif
