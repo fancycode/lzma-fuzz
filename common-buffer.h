@@ -32,7 +32,7 @@ class OutputBuffer {
 
   ISeqOutStream *stream() { return &stream_.vt; };
   const uint8_t *data() const { return data_; }
-  size_t size() const { return size_; }
+  size_t size() const { return position_; }
 
  private:
   static const size_t kInitialSize = 128;
@@ -48,7 +48,7 @@ class OutputBuffer {
   OutputBufferStream stream_;
   uint8_t *data_ = nullptr;
   size_t size_ = 0;
-  size_t available_ = 0;
+  size_t position_ = 0;
 };
 
 OutputBuffer::OutputBuffer() {
@@ -68,24 +68,25 @@ size_t OutputBuffer::_Write(const ISeqOutStream *p, const void *data,
 }
 
 size_t OutputBuffer::Write(const void *data, size_t size) {
-  if (available_ < size) {
-    if (!available_) {
-      available_ = kInitialSize;
+  size_t available = size_ - position_;
+  if (available < size) {
+    if (!size_) {
+      size_ = kInitialSize;
     }
-    while (available_ < size) {
-      available_ *= 2;
+    while (size_ - position_ < size) {
+      size_ *= 2;
     }
-    uint8_t *tmp = static_cast<uint8_t*>(malloc(available_));
+    uint8_t *tmp = static_cast<uint8_t*>(malloc(size_));
     assert(tmp);
     if (data_) {
-      memcpy(tmp, data_, size_);
+      memcpy(tmp, data_, position_);
       free(data_);
     }
     data_ = tmp;
   }
 
-  memcpy(data_ + size_, data, size);
-  size_ += size;
+  memcpy(data_ + position_, data, size);
+  position_ += size;
   return size;
 }
 
