@@ -33,22 +33,13 @@
 
 class FilterFuzzer {
  public:
-  FilterFuzzer(const uint8_t *data, size_t size) : size_(size) {
-    data_ = static_cast<uint8_t*>(malloc(size));
-    assert(data_);
-    memcpy(data_, data, size);
-  }
-  virtual ~FilterFuzzer() {
-    free(data_);
-  }
-
-  const uint8_t *data() const { return data_; }
-  size_t size() const { return size_; }
+  FilterFuzzer(const uint8_t *data, size_t size) : data_(data), size_(size) {}
+  virtual ~FilterFuzzer() = default;
 
   virtual void RunFuzzer() = 0;
 
- private:
-  uint8_t *data_;
+ protected:
+  const uint8_t *data_;
   size_t size_;
 };
 
@@ -59,7 +50,7 @@ class SevenzCrcFuzzer : public FilterFuzzer {
   }
 
   void RunFuzzer() override {
-    CrcCalc(data(), size());
+    CrcCalc(data_, size_);
   }
 };
 
@@ -70,7 +61,7 @@ class XzCrcFuzzer : public FilterFuzzer {
   }
 
   void RunFuzzer() override {
-    Crc64Calc(data(), size());
+    Crc64Calc(data_, size_);
   }
 };
 
@@ -79,11 +70,11 @@ class BraFuzzer : public FilterFuzzer {
   BraFuzzer(const uint8_t *data, size_t size) : FilterFuzzer(data, size) {}
 
   void RunFuzzer() override {
-    Byte *tmp = static_cast<Byte*>(malloc(size()));
+    Byte *tmp = static_cast<Byte*>(malloc(size_));
     assert(tmp);
-    memcpy(tmp, data(), size());
-    RunFilter(tmp, size());
-    assert(memcmp(tmp, data(), size()) == 0);
+    memcpy(tmp, data_, size_);
+    RunFilter(tmp, size_);
+    assert(memcmp(tmp, data_, size_) == 0);
     free(tmp);
   }
 
