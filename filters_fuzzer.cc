@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "7zCrc.h"
 #include "Bra.h"
 #include "Delta.h"
@@ -31,13 +33,22 @@
 
 class FilterFuzzer {
  public:
-  FilterFuzzer(const uint8_t *data, size_t size) : data_(data), size_(size) {}
-  virtual ~FilterFuzzer() = default;
+  FilterFuzzer(const uint8_t *data, size_t size) : size_(size) {
+    data_ = static_cast<uint8_t*>(malloc(size));
+    assert(data_);
+    memcpy(data_, data, size);
+  }
+  virtual ~FilterFuzzer() {
+    free(data_);
+  }
+
+  const uint8_t *data() const { return data_; }
+  size_t size() const { return size_; }
 
   virtual void RunFuzzer() = 0;
 
- protected:
-  const uint8_t *data_;
+ private:
+  uint8_t *data_;
   size_t size_;
 };
 
@@ -48,7 +59,7 @@ class SevenzCrcFuzzer : public FilterFuzzer {
   }
 
   void RunFuzzer() override {
-    CrcCalc(data_, size_);
+    CrcCalc(data(), size());
   }
 };
 
@@ -59,7 +70,7 @@ class XzCrcFuzzer : public FilterFuzzer {
   }
 
   void RunFuzzer() override {
-    Crc64Calc(data_, size_);
+    Crc64Calc(data(), size());
   }
 };
 
@@ -68,11 +79,11 @@ class BraFuzzer : public FilterFuzzer {
   BraFuzzer(const uint8_t *data, size_t size) : FilterFuzzer(data, size) {}
 
   void RunFuzzer() override {
-    Byte *tmp = static_cast<Byte*>(malloc(size_));
+    Byte *tmp = static_cast<Byte*>(malloc(size()));
     assert(tmp);
-    memcpy(tmp, data_, size_);
-    RunFilter(tmp, size_);
-    assert(memcmp(tmp, data_, size_) == 0);
+    memcpy(tmp, data(), size());
+    RunFilter(tmp, size());
+    assert(memcmp(tmp, data(), size()) == 0);
     free(tmp);
   }
 
@@ -179,9 +190,13 @@ class DeltaFuzzer : public BraFuzzer {
       return;
     }
 
-    uint8_t delta = data[0];
-    data++;
-    size--;
+    // We are using up to the first "kDeltaCount" bytes to determine the
+    // "delta" value for the filter.
+    uint8_t delta = 0;
+    static const size_t kDeltaCount = 32;
+    for (size_t i = 0; i < std::min(size, kDeltaCount); i++) {
+      delta += data[i];
+    }
     if (!delta || !size) {
       return;
     }
@@ -200,44 +215,20 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     return 0;
   }
 
-  uint8_t type = data[0];
-  data++;
-  size--;
-
-  FilterFuzzer *fuzzer;
-  switch (type) {
-    case 0:
-      fuzzer = new SevenzCrcFuzzer(data, size);
-      break;
-    case 1:
-      fuzzer = new XzCrcFuzzer(data, size);
-      break;
-    case 2:
-      fuzzer = new BraArmFuzzer(data, size);
-      break;
-    case 3:
-      fuzzer = new BraArmtFuzzer(data, size);
-      break;
-    case 4:
-      fuzzer = new BraIa64Fuzzer(data, size);
-      break;
-    case 5:
-      fuzzer = new BraPpcFuzzer(data, size);
-      break;
-    case 6:
-      fuzzer = new BraSparcFuzzer(data, size);
-      break;
-    case 7:
-      fuzzer = new BraX86Fuzzer(data, size);
-      break;
-    case 8:
-      fuzzer = new DeltaFuzzer(data, size);
-      break;
-    default:
-      return 0;
-  }
-
-  fuzzer->RunFuzzer();
-  delete fuzzer;
+  FilterFuzzer *fuzzers[] = {
+    new BraArmFuzzer(data, size),
+    new BraArmtFuzzer(data, size),
+    new BraIa64Fuzzer(data, size),
+    new BraPpcFuzzer(data, size),
+    new BraSparcFuzzer(data, size),
+    new BraX86Fuzzer(data, size),
+    new DeltaFuzzer(data, size),
+    new SevenzCrcFuzzer(data, size),
+    new XzCrcFuzzer(data, size),
+  };
+  for (FilterFuzzer *fuzzer : fuzzers) {
+    fuzzer->RunFuzzer();
+    delete fuzzer;
+  };
   return 0;
 }
