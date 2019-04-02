@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include "7zCrc.h"
+#include "Aes.h"
 #include "Bra.h"
 #include "Delta.h"
 #include "XzCrc64.h"
@@ -65,9 +66,10 @@ class XzCrcFuzzer : public FilterFuzzer {
   }
 };
 
-class BraFuzzer : public FilterFuzzer {
+class EncodeDecodeFuzzer : public FilterFuzzer {
  public:
-  BraFuzzer(const uint8_t *data, size_t size) : FilterFuzzer(data, size) {}
+  EncodeDecodeFuzzer(const uint8_t *data, size_t size)
+    : FilterFuzzer(data, size) {}
 
   void RunFuzzer() override {
     Byte *tmp = static_cast<Byte*>(malloc(size_));
@@ -84,9 +86,10 @@ class BraFuzzer : public FilterFuzzer {
   virtual void RunFilter(uint8_t *data, size_t size) = 0;
 };
 
-class BraArmFuzzer : public BraFuzzer {
+class BraArmFuzzer : public EncodeDecodeFuzzer {
  public:
-  BraArmFuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraArmFuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -98,9 +101,10 @@ class BraArmFuzzer : public BraFuzzer {
   }
 };
 
-class BraArmtFuzzer : public BraFuzzer {
+class BraArmtFuzzer : public EncodeDecodeFuzzer {
  public:
-  BraArmtFuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraArmtFuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -112,9 +116,10 @@ class BraArmtFuzzer : public BraFuzzer {
   }
 };
 
-class BraIa64Fuzzer : public BraFuzzer {
+class BraIa64Fuzzer : public EncodeDecodeFuzzer {
  public:
-  BraIa64Fuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraIa64Fuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -126,9 +131,10 @@ class BraIa64Fuzzer : public BraFuzzer {
   }
 };
 
-class BraPpcFuzzer : public BraFuzzer {
+class BraPpcFuzzer : public EncodeDecodeFuzzer {
  public:
-  BraPpcFuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraPpcFuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -140,9 +146,10 @@ class BraPpcFuzzer : public BraFuzzer {
   }
 };
 
-class BraSparcFuzzer : public BraFuzzer {
+class BraSparcFuzzer : public EncodeDecodeFuzzer {
  public:
-  BraSparcFuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraSparcFuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -154,9 +161,10 @@ class BraSparcFuzzer : public BraFuzzer {
   }
 };
 
-class BraX86Fuzzer : public BraFuzzer {
+class BraX86Fuzzer : public EncodeDecodeFuzzer {
  public:
-  BraX86Fuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  BraX86Fuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -171,9 +179,10 @@ class BraX86Fuzzer : public BraFuzzer {
   }
 };
 
-class DeltaFuzzer : public BraFuzzer {
+class DeltaFuzzer : public EncodeDecodeFuzzer {
  public:
-  DeltaFuzzer(const uint8_t *data, size_t size) : BraFuzzer(data, size) {}
+  DeltaFuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
@@ -201,12 +210,54 @@ class DeltaFuzzer : public BraFuzzer {
   }
 };
 
+class AesFuzzer : public EncodeDecodeFuzzer {
+ public:
+  AesFuzzer(const uint8_t *data, size_t size) : EncodeDecodeFuzzer(data, size) {
+    AesGenTables();
+  }
+
+ protected:
+  void RunFilter(uint8_t *data, size_t size) override {
+    if (size < AES_BLOCK_SIZE) {
+      // Need at least one block to process.
+      return;
+    }
+
+    Byte key[AES_BLOCK_SIZE];
+    memcpy(key, data, AES_BLOCK_SIZE);
+
+    static const size_t kAlignment = 16;
+    static const size_t kAesDataSize = (AES_NUM_IVMRK_WORDS + AES_BLOCK_SIZE) * sizeof(UInt32);
+    UInt32 *state = nullptr;
+    Byte *iv = nullptr;
+
+    posix_memalign(reinterpret_cast<void**>(&state), kAlignment, kAesDataSize);
+    posix_memalign(reinterpret_cast<void**>(&iv), kAlignment, AES_BLOCK_SIZE);
+    assert(state);
+    assert(iv);
+    memcpy(iv, data, AES_BLOCK_SIZE);
+
+    // Encrypt.
+    AesCbc_Init(state, iv);
+    Aes_SetKey_Enc(state + 4, key, sizeof(key));
+    g_AesCbc_Encode(state, data, size / AES_BLOCK_SIZE);
+
+    // Decrypt.
+    AesCbc_Init(state, iv);
+    Aes_SetKey_Dec(state + 4, key, sizeof(key));
+    g_AesCbc_Decode(state, data, size / AES_BLOCK_SIZE);
+    free(iv);
+    free(state);
+  }
+};
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   if (!size) {
     return 0;
   }
 
   FilterFuzzer *fuzzers[] = {
+    new AesFuzzer(data, size),
     new BraArmFuzzer(data, size),
     new BraArmtFuzzer(data, size),
     new BraIa64Fuzzer(data, size),
