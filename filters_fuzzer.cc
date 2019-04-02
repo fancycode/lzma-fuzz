@@ -30,6 +30,7 @@
 #include "Aes.h"
 #include "Bra.h"
 #include "Delta.h"
+#include "Sha256.h"
 #include "XzCrc64.h"
 
 class FilterFuzzer {
@@ -249,6 +250,21 @@ class AesFuzzer : public EncodeDecodeFuzzer {
     free(iv);
     free(state);
   }
+};
+
+class Sha256Fuzzer : public FilterFuzzer {
+ public:
+  Sha256Fuzzer(const uint8_t *data, size_t size) : FilterFuzzer(data, size) {}
+
+  void RunFuzzer() override {
+    Byte digest[SHA256_DIGEST_SIZE];
+    Sha256_Init(&sha256_);
+    Sha256_Update(&sha256_, data_, size_);
+    Sha256_Final(&sha256_, digest);
+  }
+
+ private:
+  CSha256 sha256_;
 };
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
