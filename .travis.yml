@@ -26,3 +26,6 @@ env:
 
 script:
   - ./scripts/run-travis.sh
+
+after_failure:
+  - ./scripts/dump-crashes.sh
