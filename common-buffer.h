@@ -91,6 +91,66 @@ size_t OutputBuffer::Write(const void *data, size_t size) {
   return size;
 }
 
+class OutputByteBuffer {
+ public:
+  OutputByteBuffer();
+  ~OutputByteBuffer();
+
+  IByteOut *stream() { return &stream_.vt; };
+  const uint8_t *data() const { return data_; }
+  size_t size() const { return position_; }
+
+ private:
+  static const size_t kInitialSize = 128;
+
+  typedef struct {
+    IByteOut vt;
+    OutputByteBuffer *buffer;
+  } ByteOutStream;
+
+  static void _Write(const IByteOut *pp, Byte b);
+  void Write(Byte b);
+
+  ByteOutStream stream_;
+  uint8_t *data_ = nullptr;
+  size_t size_ = 0;
+  size_t position_ = 0;
+};
+
+OutputByteBuffer::OutputByteBuffer() {
+  stream_.vt.Write = &OutputByteBuffer::_Write;
+  stream_.buffer = this;
+}
+
+OutputByteBuffer::~OutputByteBuffer() {
+  free(data_);
+}
+
+// static
+void OutputByteBuffer::_Write(const IByteOut *p, Byte b) {
+  ByteOutStream *stream = CONTAINER_FROM_VTBL(p, ByteOutStream, vt);
+  stream->buffer->Write(b);
+}
+
+void OutputByteBuffer::Write(Byte b) {
+  if (size_ == position_) {
+    if (!size_) {
+      size_ = kInitialSize;
+    } else {
+      size_ *= 2;
+    }
+    uint8_t *tmp = static_cast<uint8_t*>(malloc(size_));
+    assert(tmp);
+    if (data_) {
+      memcpy(tmp, data_, position_);
+      free(data_);
+    }
+    data_ = tmp;
+  }
+
+  data_[position_++] = b;
+}
+
 class InputBuffer {
  public:
   InputBuffer(const uint8_t *data, size_t size);
@@ -133,6 +193,47 @@ SRes InputBuffer::Read(void *data, size_t *size) {
     data_ += *size;
   }
   return SZ_OK;
+}
+
+class InputByteBuffer {
+ public:
+  InputByteBuffer(const uint8_t *data, size_t size);
+
+  IByteIn *stream() { return &stream_.vt; };
+
+ private:
+  typedef struct {
+    IByteIn vt;
+    InputByteBuffer *buffer;
+  } ByteInStream;
+
+  static Byte _Read(const IByteIn *p);
+  Byte Read();
+
+  ByteInStream stream_;
+  const uint8_t *data_;
+  size_t size_;
+  size_t position_ = 0;
+};
+
+InputByteBuffer::InputByteBuffer(const uint8_t *data, size_t size)
+  : data_(data), size_(size) {
+  stream_.vt.Read = &InputByteBuffer::_Read;
+  stream_.buffer = this;
+}
+
+// static
+Byte InputByteBuffer::_Read(const IByteIn *p) {
+  ByteInStream *stream = CONTAINER_FROM_VTBL(p, ByteInStream, vt);
+  return stream->buffer->Read();
+}
+
+Byte InputByteBuffer::Read() {
+  if (size_ == position_) {
+    return 0;
+  }
+
+  return data_[position_++];
 }
 
 class InputLookBuffer {
