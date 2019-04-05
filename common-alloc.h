@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "7zAlloc.h"
 #include "7zTypes.h"
 
 #if defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION)
@@ -36,11 +37,11 @@ static void *LzmaAlloc(ISzAllocPtr p, size_t size) {
     return nullptr;
   }
 
-  return malloc(size);
+  return SzAlloc(nullptr, size);
 }
 
 static void LzmaFree(ISzAllocPtr p, void *address) {
-  free(address);
+  SzFree(nullptr, address);
 }
 
 static ISzAlloc CommonAlloc = {LzmaAlloc, LzmaFree};
