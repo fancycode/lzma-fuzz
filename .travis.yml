@@ -19,6 +19,7 @@ env:
     - FUZZER=lzma2enc_fuzzer
     - FUZZER=lzmadec_fuzzer
     - FUZZER=lzmaenc_fuzzer
+    - FUZZER=ppmdenc_fuzzer
     - FUZZER=xzdec_fuzzer
     - FUZZER=xzenc_fuzzer
 
