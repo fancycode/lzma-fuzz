@@ -13,6 +13,7 @@ env:
     - CXXFLAGS=-fsanitize=fuzzer,address
     - LIB_FUZZING_ENGINE=-fsanitize=fuzzer
   matrix:
+    - FUZZER=check-sdk
     - FUZZER=7z_fuzzer
     - FUZZER=filters_fuzzer
     - FUZZER=lzma2dec_fuzzer
@@ -24,7 +25,4 @@ env:
     - FUZZER=xzenc_fuzzer
 
 script:
-  - make
-  - |
-    [ ! -d "corpus/$FUZZER" ] || ./$FUZZER corpus/$FUZZER/*
-  - ./$FUZZER -max_total_time=10
+  - ./scripts/run-travis.sh
