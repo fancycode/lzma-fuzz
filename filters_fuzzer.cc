@@ -282,6 +282,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     new BraX86Fuzzer(data, size),
     new DeltaFuzzer(data, size),
     new SevenzCrcFuzzer(data, size),
+    new Sha256Fuzzer(data, size),
     new XzCrcFuzzer(data, size),
   };
   for (FilterFuzzer *fuzzer : fuzzers) {
