@@ -31,8 +31,11 @@ static const size_t kBufferSize = 8192;
 
 static const size_t kMaxDictionarySize = 32 * 1024 * 1024;
 
+// Limit maximum size to avoid running into timeouts with too large data.
+static const size_t kMaxInputSize = 100 * 1024;
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  if (size < LZMA_PROPS_SIZE) {
+  if (size < LZMA_PROPS_SIZE || size > kMaxInputSize) {
     return 0;
   }
 

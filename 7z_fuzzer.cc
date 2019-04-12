@@ -29,7 +29,14 @@
 #include "common-alloc.h"
 #include "common-buffer.h"
 
+// Limit maximum size to avoid running into timeouts with too large data.
+static const size_t kMaxInputSize = 100 * 1024;
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  if (size > kMaxInputSize) {
+    return 0;
+  }
+
   CSzArEx db;
   SRes res;
   UInt16 *temp = nullptr;
