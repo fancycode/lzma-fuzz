@@ -23,12 +23,14 @@
 
 #include "7zCrc.h"
 #include "Xz.h"
+#include "XzCrc64.h"
 
 #include "common-alloc.h"
 #include "common-buffer.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   CrcGenerateTable();
+  Crc64GenerateTable();
 
   CXzDecMtProps props;
   XzDecMtProps_Init(&props);

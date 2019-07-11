@@ -23,6 +23,7 @@
 
 #include "7zCrc.h"
 #include "Xz.h"
+#include "XzCrc64.h"
 #include "XzEnc.h"
 
 #include "common-alloc.h"
@@ -34,6 +35,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
 
   CrcGenerateTable();
+  Crc64GenerateTable();
 
   SRes res;
   CXzProps props;
