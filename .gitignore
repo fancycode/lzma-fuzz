@@ -1,4 +1,5 @@
 *.a
 *.o
+/lzma*.7z
 /*_fuzzer
 /*_seed_corpus.zip

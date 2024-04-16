@@ -2,19 +2,20 @@
 
 #include "StdAfx.h"
 
+#ifdef _WIN32
 #include <tchar.h>
+#endif
 
 #include "IntToString.h"
 #include "StdOutStream.h"
 #include "StringConvert.h"
 #include "UTFConvert.h"
 
-#define kFileOpenMode "wt"
-
-extern int g_CodePage;
-
 CStdOutStream g_StdOut(stdout);
 CStdOutStream g_StdErr(stderr);
+
+/*
+// #define kFileOpenMode "wt"
 
 bool CStdOutStream::Open(const char *fileName) throw()
 {
@@ -34,6 +35,7 @@ bool CStdOutStream::Close() throw()
   _streamIsOpen = false;
   return true;
 }
+*/
 
 bool CStdOutStream::Flush() throw()
 {
@@ -47,38 +49,33 @@ CStdOutStream & endl(CStdOutStream & outStream) throw()
 
 CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
 {
-  int codePage = g_CodePage;
-  if (codePage == -1)
-    codePage = CP_OEMCP;
-  AString dest;
-  if (codePage == CP_UTF8)
-    ConvertUnicodeToUTF8(s, dest);
-  else
-    UnicodeStringToMultiByte2(dest, s, (UINT)codePage);
-  return operator<<((const char *)dest);
-}
-
-void StdOut_Convert_UString_to_AString(const UString &s, AString &temp)
-{
-  int codePage = g_CodePage;
-  if (codePage == -1)
-    codePage = CP_OEMCP;
-  if (codePage == CP_UTF8)
-    ConvertUnicodeToUTF8(s, temp);
-  else
-    UnicodeStringToMultiByte2(temp, s, (UINT)codePage);
+  AString temp;
+  UString s2(s);
+  PrintUString(s2, temp);
+  return *this;
 }
 
 void CStdOutStream::PrintUString(const UString &s, AString &temp)
 {
-  StdOut_Convert_UString_to_AString(s, temp);
+  Convert_UString_to_AString(s, temp);
   *this << (const char *)temp;
+}
+
+void CStdOutStream::Convert_UString_to_AString(const UString &src, AString &dest)
+{
+  int codePage = CodePage;
+  if (codePage == -1)
+    codePage = CP_OEMCP;
+  if (codePage == CP_UTF8)
+    ConvertUnicodeToUTF8(src, dest);
+  else
+    UnicodeStringToMultiByte2(dest, src, (UINT)codePage);
 }
 
 
 static const wchar_t kReplaceChar = '_';
 
-void CStdOutStream::Normalize_UString__LF_Allowed(UString &s)
+void CStdOutStream::Normalize_UString_LF_Allowed(UString &s)
 {
   unsigned len = s.Len();
   wchar_t *d = s.GetBuf();
