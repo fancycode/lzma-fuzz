@@ -25,6 +25,8 @@ C_SOURCES = \
 	$(SDK_ROOT)/C/Delta.c \
 	$(SDK_ROOT)/C/DllSecur.c \
 	$(SDK_ROOT)/C/LzFind.c \
+	$(SDK_ROOT)/C/LzFindMt.c \
+	$(SDK_ROOT)/C/LzFindOpt.c \
 	$(SDK_ROOT)/C/Lzma2Dec.c \
 	$(SDK_ROOT)/C/Lzma2DecMt.c \
 	$(SDK_ROOT)/C/Lzma2Enc.c \
@@ -38,7 +40,9 @@ C_SOURCES = \
 	$(SDK_ROOT)/C/Ppmd7Dec.c \
 	$(SDK_ROOT)/C/Ppmd7Enc.c \
 	$(SDK_ROOT)/C/Sha256.c \
+	$(SDK_ROOT)/C/Sha256Opt.c \
 	$(SDK_ROOT)/C/Sort.c \
+	$(SDK_ROOT)/C/Threads.c \
 	$(SDK_ROOT)/C/Xz.c \
 	$(SDK_ROOT)/C/XzCrc64.c \
 	$(SDK_ROOT)/C/XzCrc64Opt.c \
@@ -85,7 +89,7 @@ clean:
 	$(CC) $(CFLAGS) $(SDK_FLAGS) $(INCLUDES) $(COMMON_FLAGS) -c -o $@ $<
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(COMMON_FLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(COMMON_FLAGS) -std=c++11 -c -o $@ $<
 
 %_seed_corpus.zip:
 	zip -r $@ $(CORPUS_ROOT)/$*
