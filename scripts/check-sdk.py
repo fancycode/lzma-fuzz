@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 
 ##
 ## @copyright Copyright (c) 2019 Joachim Bauch <mail@joachim-bauch.de>
@@ -22,7 +22,7 @@
 import os.path
 import re
 import sys
-import urllib2
+from urllib.request import urlopen
 
 URL = 'https://www.7-zip.org/sdk.html'
 
@@ -44,36 +44,36 @@ def normalize_version(s):
   try:
     version = int(s)
   except ValueError:
-    print >> sys.stderr, 'Not a valid version: %s' % (s)
+    print('Not a valid version: %s' % (s), file=sys.stderr)
     sys.exit(1)
 
   return '%.2d.%.2d' % (version / 100, version % 100)
 
 def main():
-  with file(VERSIONS_FILE, 'rb') as fp:
+  with open(VERSIONS_FILE, 'r') as fp:
     match = GET_SDK_VERSION(fp.read())
     if match is None:
-      print >> sys.stderr, 'No version number found in %s' % (VERSIONS_FILE)
+      print('No version number found in %s' % (VERSIONS_FILE), file=sys.stderr)
       sys.exit(1)
 
     sdk_version = match.group(1)
 
-  print 'Checking for update of SDK version', sdk_version
+  print('Checking for update of SDK version', sdk_version)
 
-  fp = urllib2.urlopen(URL)
-  data = fp.read()
+  fp = urlopen(URL)
+  data = fp.read().decode('utf-8')
   versions = SEARCH_SDK_DOWNLOADS(data)
   if not versions:
-    print >> sys.stderr, 'No downloads found, check script.'
+    print('No downloads found, check script.', file=sys.stderr)
     sys.exit(1)
 
   versions = sorted(map(normalize_version, versions))[::-1]
-  print 'Found downloads for versions %s' % (', '.join(versions))
+  print('Found downloads for versions %s' % (', '.join(versions)))
   if sdk_version < versions[0]:
-    print >> sys.stderr, 'Found newer version %s' % (versions[0])
+    print('Found newer version %s' % (versions[0]), file=sys.stderr)
     sys.exit(1)
 
-  print 'Already using the latest version'
+  print('Already using the latest version')
 
 if __name__ == '__main__':
   main()
