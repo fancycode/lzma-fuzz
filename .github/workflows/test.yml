@@ -1,0 +1,68 @@
+name: test
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/fuzzer.yml'
+      - '**.c'
+      - '**.cc'
+      - '**.h'
+      - 'Makefile'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/fuzzer.yml'
+      - '**.c'
+      - '**.cc'
+      - '**.h'
+      - 'Makefile'
+
+permissions:
+  contents: read
+
+jobs:
+  fuzzer:
+    env:
+      CC: "clang"
+      CXX: "clang++"
+      CFLAGS: "-fsanitize=fuzzer,address"
+      CXXFLAGS: "-fsanitize=fuzzer,address"
+      LIB_FUZZING_ENGINE: "-fsanitize=fuzzer"
+
+    strategy:
+      matrix:
+        fuzzer:
+          - "7z_fuzzer"
+          - "filters_fuzzer"
+          - "lzma2dec_fuzzer"
+          - "lzma2enc_fuzzer"
+          - "lzmadec_fuzzer"
+          - "lzmaenc_fuzzer"
+          - "ppmdenc_fuzzer"
+          - "xzdec_fuzzer"
+          - "xzenc_fuzzer"
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          create-symlink: true
+
+      - name: Build fuzzer
+        run: |
+          make ${{ matrix.fuzzer }}
+
+      - name: Run fuzzer against corpus
+        run: |
+          if [ -d "corpus/${{ matrix.fuzzer }}" ]; then
+            echo "Running ${{ matrix.fuzzer }} against corpus ..."
+            ./${{ matrix.fuzzer }} corpus/${{ matrix.fuzzer }}/*
+          fi
+
+      - name: Run fuzzer
+        run: |
+          ./${{ matrix.fuzzer }} -max_total_time=10
