@@ -95,10 +95,25 @@ class BraArmFuzzer : public EncodeDecodeFuzzer {
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
     // Encode data.
-    ARM_Convert(data, size, kIp, 1);
+    z7_BranchConv_ARM_Enc(data, size, kIp);
 
     // Decode data.
-    ARM_Convert(data, size, kIp, 0);
+    z7_BranchConv_ARM_Dec(data, size, kIp);
+  }
+};
+
+class BraArm64Fuzzer : public EncodeDecodeFuzzer {
+ public:
+  BraArm64Fuzzer(const uint8_t *data, size_t size)
+    : EncodeDecodeFuzzer(data, size) {}
+
+ protected:
+  void RunFilter(uint8_t *data, size_t size) override {
+    // Encode data.
+    z7_BranchConv_ARM64_Enc(data, size, kIp);
+
+    // Decode data.
+    z7_BranchConv_ARM64_Dec(data, size, kIp);
   }
 };
 
@@ -110,10 +125,10 @@ class BraArmtFuzzer : public EncodeDecodeFuzzer {
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
     // Encode data.
-    ARMT_Convert(data, size, kIp, 1);
+    z7_BranchConv_ARMT_Enc(data, size, kIp);
 
     // Decode data.
-    ARMT_Convert(data, size, kIp, 0);
+    z7_BranchConv_ARMT_Dec(data, size, kIp);
   }
 };
 
@@ -125,10 +140,10 @@ class BraIa64Fuzzer : public EncodeDecodeFuzzer {
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
     // Encode data.
-    IA64_Convert(data, size, kIp, 1);
+    z7_BranchConv_IA64_Enc(data, size, kIp);
 
     // Decode data.
-    IA64_Convert(data, size, kIp, 0);
+    z7_BranchConv_IA64_Dec(data, size, kIp);
   }
 };
 
@@ -140,10 +155,10 @@ class BraPpcFuzzer : public EncodeDecodeFuzzer {
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
     // Encode data.
-    PPC_Convert(data, size, kIp, 1);
+    z7_BranchConv_PPC_Enc(data, size, kIp);
 
     // Decode data.
-    PPC_Convert(data, size, kIp, 0);
+    z7_BranchConv_PPC_Dec(data, size, kIp);
   }
 };
 
@@ -155,10 +170,10 @@ class BraSparcFuzzer : public EncodeDecodeFuzzer {
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
     // Encode data.
-    SPARC_Convert(data, size, kIp, 1);
+    z7_BranchConv_SPARC_Enc(data, size, kIp);
 
     // Decode data.
-    SPARC_Convert(data, size, kIp, 0);
+    z7_BranchConv_SPARC_Dec(data, size, kIp);
   }
 };
 
@@ -169,14 +184,13 @@ class BraX86Fuzzer : public EncodeDecodeFuzzer {
 
  protected:
   void RunFilter(uint8_t *data, size_t size) override {
-    UInt32 state;
+    UInt32 encState = Z7_BRANCH_CONV_ST_X86_STATE_INIT_VAL;
     // Encode data.
-    x86_Convert_Init(state);
-    x86_Convert(data, size, kIp, &state, 1);
+    z7_BranchConvSt_X86_Enc(data, size, kIp, &encState);
 
     // Decode data.
-    x86_Convert_Init(state);
-    x86_Convert(data, size, kIp, &state, 0);
+    UInt32 decState = Z7_BRANCH_CONV_ST_X86_STATE_INIT_VAL;
+    z7_BranchConvSt_X86_Dec(data, size, kIp, &decState);
   }
 };
 
@@ -275,6 +289,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   FilterFuzzer *fuzzers[] = {
     new AesFuzzer(data, size),
     new BraArmFuzzer(data, size),
+    new BraArm64Fuzzer(data, size),
     new BraArmtFuzzer(data, size),
     new BraIa64Fuzzer(data, size),
     new BraPpcFuzzer(data, size),

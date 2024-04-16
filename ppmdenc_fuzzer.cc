@@ -47,13 +47,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   Ppmd7_Init(&p_enc, order);
 
   OutputByteBuffer out_buffer;
-  CPpmd7z_RangeEnc enc;
-  Ppmd7z_RangeEnc_Init(&enc);
-  enc.Stream = out_buffer.stream();
+  CPpmd7 enc;
+  Ppmd7z_Init_RangeEnc(&enc);
+
+  p_enc.rc.enc.Stream = out_buffer.stream();
   for (size_t i = 0; i < size; ++i) {
-    Ppmd7_EncodeSymbol(&p_enc, &enc, data[i]);
+    Ppmd7z_EncodeSymbols(&p_enc, data+i, data+i+1);
   }
-  Ppmd7z_RangeEnc_FlushData(&enc);
+  Ppmd7z_Flush_RangeEnc(&enc);
   Ppmd7_Free(&p_enc, &CommonAlloc);
 
   {
@@ -63,13 +64,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     Ppmd7_Construct(&p_dec);
     assert(Ppmd7_Alloc(&p_dec, memsize, &CommonAlloc));
     Ppmd7_Init(&p_dec, order);
-    CPpmd7z_RangeDec dec;
-    Ppmd7z_RangeDec_CreateVTable(&dec);
+    CPpmd7_RangeDec dec;
     dec.Stream = in_buffer.stream();
     assert(Ppmd7z_RangeDec_Init(&dec));
 
     for (size_t i = 0; i < size; ++i) {
-      int sym = Ppmd7_DecodeSymbol(&p_dec, &dec.vt);
+      int sym = Ppmd7z_DecodeSymbol(&p_dec);
       assert(sym >= 0);
       assert(sym == data[i]);
     }

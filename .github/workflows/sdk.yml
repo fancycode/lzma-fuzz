@@ -13,6 +13,8 @@ on:
       - '.github/workflows/sdk.yml'
       - 'sdk/**'
       - 'scripts/check-sdk.py'
+  schedule:
+    - cron: "0 2 * * SUN"
 
 permissions:
   contents: read
