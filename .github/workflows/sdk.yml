@@ -1,0 +1,28 @@
+name: sdk
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/sdk.yml'
+      - 'sdk/**'
+      - 'scripts/check-sdk.py'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/sdk.yml'
+      - 'sdk/**'
+      - 'scripts/check-sdk.py'
+
+permissions:
+  contents: read
+
+jobs:
+  check-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SDK version
+        run: |
+          ./scripts/check-sdk.py
